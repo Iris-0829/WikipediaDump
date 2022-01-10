@@ -7,7 +7,7 @@ import re
 import timeit
 
 
-def decompress_math(dump, index):
+def decompress_math(dump, index, flag=False):
     # dump = 'dumps/enwiki-latest-pages-articles-multistream1.xml-p1p41242.bz2'
     # index = 'dumps/enwiki-latest-pages-articles-multistream-index1.txt-p1p41242.bz2'
 
