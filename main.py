@@ -33,11 +33,11 @@ def main():
     print('dump: ', dump)
     print('index: ', index)
 
-    # # decompress dump and convert to html files
-    # if args['verbose'] is None:
-    #     decompress_math('dumps/' + dump, 'dumps/' + index)
-    # else:
-    #     decompress_math('dumps/' + dump, 'dumps/' + index, args['verbose'])
+    # decompress dump and convert to html files
+    if args['verbose'] is None:
+        decompress_math(dump_path + '/' + dump, dump_path + '/' + index, result_path)
+    else:
+        decompress_math(dump_path + '/' + dump, dump_path + '/' + index, result_path, args['verbose'])
 
 
 if __name__ == "__main__":
