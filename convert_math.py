@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup
 import os
 import re
 import timeit
+import html
 
 
 def decompress_math(dump, index, result_path, flag=False):
@@ -61,20 +62,34 @@ def decompress_math(dump, index, result_path, flag=False):
                           exist_math)  # true for there exist math expression
 
                     target = pages[page_index].prettify(formatter="html")
-                    print(target)
+                    target = html.unescape(target)
+
+                    page_title = re.sub(r'[^A-Za-z0-9 ]+', '', page_titles[page_index])
+                    page_title = page_title.replace(' ', '_')
+
+                    with open(result_path + '/' + page_title + '.txt', 'w') as f:
+                        f.write(target)  # before conversion
 
                     # convert target to html file with latexml and latexmlpost
-                    l1 = (m.start() for m in re.finditer('&lt;math&gt;', target))
-                    l2 = (n.start() for n in re.finditer('&lt;/math&gt;', target))
+                    l1 = (m.start() for m in re.finditer('<math', target))
+                    l2 = (n.start() for n in re.finditer('</math>', target))
 
                     total_occur = 0
                     for a, b in zip(l1, l2):
                         a += total_occur
                         b += total_occur
 
-                        latex_str = target[a + 12:b]
+                        if target[a + 5] == '>':
+                            latex_str = target[a + 6:b]
+                            is_block = False
+                        else:
+                            latex_str = target[a + 22:b]
+                            is_block = True
+
                         start2 = timeit.default_timer()
-                        latex_str = latex_str.replace('&amp;', '&').replace('align', 'aligned').replace('&lt;', '<').replace('&gt;', '>')
+                        latex_str_len = len(latex_str)
+
+                        latex_str = latex_str.replace('align', 'aligned')
                         print(latex_str)
 
                         with open(tex_path, "r") as fin:
@@ -83,24 +98,27 @@ def decompress_math(dump, index, result_path, flag=False):
                                 fout.write(contents.replace('$$ $$', '$$ ' + latex_str + ' $$'))
 
                         os.system("latexml actual.tex | latexmlpost - --format=html5 --destination=combined.html --presentationmathml --contentmathml")
+
+
                         with open("combined.html", "r") as h:
-                            h_content = h.read()
+                            h_content = h.read().replace('\n', '')
                             m = re.search('<math(.+?)</math>', h_content)
                             mathml = ''
                             if m:
                                 mathml = '<math' + m.group(1) + '</math>'
-                                print(mathml)
 
                         end2 = timeit.default_timer()
                         time_count += end2 - start2
 
-                        # print(latex_str)
-                        # print(mathml)
-                        total_occur += len(mathml) - len(latex_str)
-                        target = target[:a + 12] + mathml + target[b:]
 
-                    page_title = re.sub(r'[^A-Za-z0-9 ]+', '', page_titles[page_index])
-                    page_title = page_title.replace(' ', '_')
+                        # total_occur += len(mathml) - len(latex_str)
+                        # target = target[:a] + mathml + target[b - 6:]
+                        if not is_block:
+                            total_occur += len(mathml) - latex_str_len - 13
+                            target = target[:a] + mathml + target[b + 7:]
+                        else:
+                            total_occur += len(mathml) - latex_str_len - 29
+                            target = target[:a] + mathml + target[b + 7:]
 
                     with open(result_path + '/' + page_title + '.html', 'w') as f:
                         f.write(target)
