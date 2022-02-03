@@ -17,10 +17,8 @@ class TestDumpConvert(unittest.TestCase):
     def test_convert_Albedo(self):
         with open("test/Albedo.txt", "r") as t:
             with open("test/Albedo.html", "r") as h:
-                with open("test/Albedo-result.html", "w") as r:
-                    result_Albedo = convert(t.read().replace("\n", ""), self.tex_path)
-                    r.write(result_Albedo)
-                    self.assertEqual(result_Albedo, h.read().replace("\n", ""))
+                result_Albedo = convert(t.read().replace("\n", ""), self.tex_path)
+                self.assertEqual(result_Albedo, h.read().replace("\n", ""))
 
     def test_convert_Ampere(self):
         with open("test/Ampere.txt", "r") as t:
