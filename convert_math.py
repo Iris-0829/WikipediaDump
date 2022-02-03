@@ -54,8 +54,8 @@ def decompress_math(dump, index, result_path, flag=False):
                 exist_math = extract_text.find('<math>') != -1
 
                 if exist_math:
-                    start1 = timeit.default_timer()
-                    time_count = 0
+                    # start1 = timeit.default_timer()
+                    # time_count = 0
 
                     print("page_index = ", page_index, "   page_title = ", page_titles[page_index],
                           '   Math expressions: ',
@@ -67,61 +67,66 @@ def decompress_math(dump, index, result_path, flag=False):
                     page_title = re.sub(r'[^A-Za-z0-9 ]+', '', page_titles[page_index])
                     page_title = page_title.replace(' ', '_')
 
-                    with open(result_path + '/' + page_title + '.txt', 'w') as f:
-                        f.write(target)  # before conversion
-
-                    # convert target to html file with latexml and latexmlpost
-                    l1 = (m.start() for m in re.finditer('<math', target))
-                    l2 = (n.start() for n in re.finditer('</math>', target))
-
-                    total_occur = 0
-                    for a, b in zip(l1, l2):
-                        a += total_occur
-                        b += total_occur
-
-                        if target[a + 5] == '>':
-                            latex_str = target[a + 6:b]
-                            is_block = False
-                        else:
-                            latex_str = target[a + 22:b]
-                            is_block = True
-
-                        start2 = timeit.default_timer()
-                        latex_str_len = len(latex_str)
-
-                        latex_str = latex_str.replace('align', 'aligned')
-                        print(latex_str)
-
-                        with open(tex_path, "r") as fin:
-                            with open("actual.tex", "w") as fout:
-                                contents = fin.read()
-                                fout.write(contents.replace('$$ $$', '$$ ' + latex_str + ' $$'))
-
-                        os.system("latexml actual.tex | latexmlpost - --format=html5 --destination=combined.html --presentationmathml --contentmathml")
-
-
-                        with open("combined.html", "r") as h:
-                            h_content = h.read().replace('\n', '')
-                            m = re.search('<math(.+?)</math>', h_content)
-                            mathml = ''
-                            if m:
-                                mathml = '<math' + m.group(1) + '</math>'
-
-                        end2 = timeit.default_timer()
-                        time_count += end2 - start2
-
-
-                        # total_occur += len(mathml) - len(latex_str)
-                        # target = target[:a] + mathml + target[b - 6:]
-                        if not is_block:
-                            total_occur += len(mathml) - latex_str_len - 13
-                            target = target[:a] + mathml + target[b + 7:]
-                        else:
-                            total_occur += len(mathml) - latex_str_len - 29
-                            target = target[:a] + mathml + target[b + 7:]
+                    convert(target, tex_path)
 
                     with open(result_path + '/' + page_title + '.html', 'w') as f:
                         f.write(target)
 
-                    end1 = timeit.default_timer()
+                    # end1 = timeit.default_timer()
                     # print(time_count / (1.0*(end1 - start1)))
+    if os.path.exists(tex_path):
+        os.remove(tex_path)
+    if os.path.exists("combined.html"):
+        os.remove("combined.html")
+    if os.path.exists("actual.tex"):
+        os.remove("actual.tex")
+
+def convert(target, tex_path):
+    # convert target to html file with latexml and latexmlpost
+    l1 = (m.start() for m in re.finditer('<math', target))
+    l2 = (n.start() for n in re.finditer('</math>', target))
+
+    total_occur = 0
+    for a, b in zip(l1, l2):
+        a += total_occur
+        b += total_occur
+
+        if target[a + 5] == '>':
+            latex_str = target[a + 6:b]
+            is_block = False
+        else:
+            latex_str = target[a + 22:b]
+            is_block = True
+
+        # start2 = timeit.default_timer()
+        latex_str_len = len(latex_str)
+
+        latex_str = latex_str.replace('align', 'aligned')
+        print(latex_str)
+
+        with open(tex_path, "r") as fin:
+            with open("actual.tex", "w") as fout:
+                contents = fin.read()
+                fout.write(contents.replace('$$ $$', '$$ ' + latex_str + ' $$'))
+
+        os.system(
+            "latexml actual.tex | latexmlpost - --format=html5 --destination=combined.html --presentationmathml --contentmathml")
+
+        with open("combined.html", "r") as h:
+            h_content = h.read().replace('\n', '')
+            m = re.search('<math(.+?)</math>', h_content)
+            mathml = ''
+            if m:
+                mathml = '<math' + m.group(1) + '</math>'
+
+        # end2 = timeit.default_timer()
+        # time_count += end2 - start2
+
+        if not is_block:
+            total_occur += len(mathml) - latex_str_len - 13
+            target = target[:a] + mathml + target[b + 7:]
+        else:
+            total_occur += len(mathml) - latex_str_len - 29
+            target = target[:a] + mathml + target[b + 7:]
+
+    return target
