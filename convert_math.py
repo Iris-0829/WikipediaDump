@@ -1,13 +1,13 @@
 import bz2
-import subprocess
 
 from bs4 import BeautifulSoup
 import os
 import re
 import timeit
+import html
 
 
-def decompress_math(dump, index, flag=False):
+def decompress_math(dump, index, result_path, flag=False):
     # dump = 'dumps/enwiki-latest-pages-articles-multistream1.xml-p1p41242.bz2'
     # index = 'dumps/enwiki-latest-pages-articles-multistream-index1.txt-p1p41242.bz2'
 
@@ -25,6 +25,16 @@ def decompress_math(dump, index, flag=False):
 
     file_size = os.path.getsize(dump)
     start_bytes.append(file_size + 1)
+
+    tex_path = 'math_expression.tex'
+    if not os.path.exists(tex_path):
+        # create log file if it doesn't exist
+        with open(tex_path, 'w') as f:
+            f.write("\\documentclass{article}\n" +
+                    "\\usepackage{amsmath}\n" +
+                    "\\begin{document}\n" +
+                    "$$ $$\n" +
+                    "\\end{document}")
 
     with open(dump, 'rb') as d:
         for start_byte in start_bytes:
@@ -44,47 +54,79 @@ def decompress_math(dump, index, flag=False):
                 exist_math = extract_text.find('<math>') != -1
 
                 if exist_math:
-                    start1 = timeit.default_timer()
-                    time_count = 0
+                    # start1 = timeit.default_timer()
+                    # time_count = 0
 
                     print("page_index = ", page_index, "   page_title = ", page_titles[page_index],
                           '   Math expressions: ',
                           exist_math)  # true for there exist math expression
 
                     target = pages[page_index].prettify(formatter="html")
-
-                    # convert target to html file with latexmlmath
-                    target = target.replace('"', '\\"').replace('&lt;', '<').replace('&gt;', '>').replace('&amp;',
-                                                                                                          '&')
-                    l1 = (m.start() for m in re.finditer('<math>', target))
-                    l2 = (n.start() for n in re.finditer('</math>', target))
-
-                    total_occur = 0
-                    for a, b in zip(l1, l2):
-
-                        a += total_occur
-                        b += total_occur
-
-                        latex_str = target[a + 6:b]
-                        start2 = timeit.default_timer()
-                        mathml = subprocess.run(['latexmlmath', latex_str, '--preload=amsmath.sty', '--preload=amssymb.sty', '--preload=amsfonts.sty'],
-                                                stdout=subprocess.PIPE).stdout.decode('utf-8')
-                        end2 = timeit.default_timer()
-                        time_count += end2-start2
-
-                        print(latex_str)
-                        # print(mathml)
-                        total_occur += len(mathml) - len(latex_str)
-                        target = target[:a + 6] + mathml + target[b:]
-
+                    target = html.unescape(target)
 
                     page_title = re.sub(r'[^A-Za-z0-9 ]+', '', page_titles[page_index])
                     page_title = page_title.replace(' ', '_')
 
-                    with open('result/' + page_title + '.html', 'w') as f:
+                    convert(target, tex_path)
+
+                    with open(result_path + '/' + page_title + '.html', 'w') as f:
                         f.write(target)
 
-                    end1 = timeit.default_timer()
-                    print(time_count / (1.0*(end1 - start1)))
+                    # end1 = timeit.default_timer()
+                    # print(time_count / (1.0*(end1 - start1)))
+    if os.path.exists(tex_path):
+        os.remove(tex_path)
+    if os.path.exists("combined.html"):
+        os.remove("combined.html")
+    if os.path.exists("actual.tex"):
+        os.remove("actual.tex")
 
+def convert(target, tex_path):
+    # convert target to html file with latexml and latexmlpost
+    l1 = (m.start() for m in re.finditer('<math', target))
+    l2 = (n.start() for n in re.finditer('</math>', target))
 
+    total_occur = 0
+    for a, b in zip(l1, l2):
+        a += total_occur
+        b += total_occur
+
+        if target[a + 5] == '>':
+            latex_str = target[a + 6:b]
+            is_block = False
+        else:
+            latex_str = target[a + 22:b]
+            is_block = True
+
+        # start2 = timeit.default_timer()
+        latex_str_len = len(latex_str)
+
+        latex_str = latex_str.replace('align', 'aligned')
+        print(latex_str)
+
+        with open(tex_path, "r") as fin:
+            with open("actual.tex", "w") as fout:
+                contents = fin.read()
+                fout.write(contents.replace('$$ $$', '$$ ' + latex_str + ' $$'))
+
+        os.system(
+            "latexml actual.tex | latexmlpost - --format=html5 --destination=combined.html --presentationmathml --contentmathml")
+
+        with open("combined.html", "r") as h:
+            h_content = h.read().replace('\n', '')
+            m = re.search('<math(.+?)</math>', h_content)
+            mathml = ''
+            if m:
+                mathml = '<math' + m.group(1) + '</math>'
+
+        # end2 = timeit.default_timer()
+        # time_count += end2 - start2
+
+        if not is_block:
+            total_occur += len(mathml) - latex_str_len - 13
+            target = target[:a] + mathml + target[b + 7:]
+        else:
+            total_occur += len(mathml) - latex_str_len - 29
+            target = target[:a] + mathml + target[b + 7:]
+
+    return target
