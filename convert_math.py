@@ -102,7 +102,7 @@ def convert(target, tex_path):
         latex_str_len = len(latex_str)
 
         latex_str = latex_str.replace('align', 'aligned')
-        print(latex_str)
+        # print(latex_str)
 
         with open(tex_path, "r") as fin:
             with open("actual.tex", "w") as fout:
@@ -110,7 +110,7 @@ def convert(target, tex_path):
                 fout.write(contents.replace('$$ $$', '$$ ' + latex_str + ' $$'))
 
         os.system(
-            "latexml actual.tex | latexmlpost - --format=html5 --destination=combined.html --presentationmathml --contentmathml")
+            "latexml actual.tex 2>/dev/null | latexmlpost - --format=html5 --destination=combined.html --presentationmathml --contentmathml 2>/dev/null")
 
         with open("combined.html", "r") as h:
             h_content = h.read().replace('\n', '')
