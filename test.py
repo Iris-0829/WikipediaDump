@@ -39,7 +39,9 @@ def compare(actual_path, expected_path, verbose):
             expected = e.read().split('\n')
 
             actual[:] = (value for value in actual if value != '')
+            actual = [value.strip() for value in actual]
             expected[:] = (value for value in expected if value != '')
+            expected = [value.strip() for value in expected]
 
             if verbose:
                 for diff in difflib.context_diff(actual, expected):

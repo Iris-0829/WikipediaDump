@@ -17,6 +17,7 @@ def main():
 
     dump_path = "dump" if args['location'] is None else args['location']
     result_path = "result" if args['result'] is None else args['result']
+    verbose = 0 if args['verbose'] is None else args['verbose']
 
     # create directory for dump and result
     if not os.path.exists(dump_path):
@@ -35,7 +36,7 @@ def main():
     print('index: ', index)
 
     # decompress dump and convert to html files
-    decompress_math(dump_path + '/' + dump, dump_path + '/' + index, result_path, args['verbose'])
+    decompress_math(dump_path + '/' + dump, dump_path + '/' + index, result_path, verbose)
 
 
 if __name__ == "__main__":

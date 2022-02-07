@@ -11,7 +11,7 @@ def decompress_math(dump, index, result_path, verbose):
     # dump = 'dumps/enwiki-latest-pages-articles-multistream1.xml-p1p41242.bz2'
     # index = 'dumps/enwiki-latest-pages-articles-multistream-index1.txt-p1p41242.bz2'
 
-    if verbose not in [1, 2, 3]:
+    if verbose not in [0, 1, 2, 3]:
         raise ValueError('Invalid value for -v/--verbose')
 
     num_expr = 0
@@ -73,7 +73,9 @@ def decompress_math(dump, index, result_path, verbose):
                     page_title = re.sub(r'[^A-Za-z0-9 ]+', '', page_titles[page_index])
                     page_title = page_title.replace(' ', '_')
 
-                    num_expr += convert(target, tex_path)
+                    result = convert(target, tex_path)
+                    num_expr += result[1]
+                    target = result[0]
 
                     with open(result_path + '/' + page_title + '.html', 'w') as f:
                         f.write(target)
