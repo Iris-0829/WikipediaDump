@@ -1,45 +1,52 @@
-import unittest
-from convert_math import convert
+import argparse
+import difflib
 import os
 
-class TestDumpConvert(unittest.TestCase):
+def convert_test():
+    parser = argparse.ArgumentParser(description='Test suite for dump conversion')
 
-    def setUp(self) -> None:
-        self.tex_path = 'math_expression.tex'
-        if not os.path.exists(self.tex_path):
-            with open(self.tex_path, 'w') as f:
-                f.write("\\documentclass{article}\n" +
-                        "\\usepackage{amsmath}\n" +
-                        "\\begin{document}\n" +
-                        "$$ $$\n" +
-                        "\\end{document}")
+    parser.add_argument('dir', help='Actual and expected result', nargs=2)
+    parser.add_argument('-v', '--verbose', help='Show more informative output', required=False, action="store_true")
 
-    def test_convert_Albedo(self):
-        with open("test/Albedo.txt", "r") as t:
-            with open("test/Albedo.html", "r") as h:
-                result_Albedo = convert(t.read().replace("\n", ""), self.tex_path)[0]
-                self.assertEqual(result_Albedo, h.read().replace("\n", ""))
+    args = vars(parser.parse_args())
 
-    def test_convert_Ampere(self):
-        with open("test/Ampere.txt", "r") as t:
-            with open("test/Ampere.html", "r") as h:
-                result_Ampere = convert(t.read().replace("\n", ""), self.tex_path)[0]
-                self.assertEqual(result_Ampere, h.read().replace("\n", ""))
+    actual_dir_path = args['dir'][0]
+    expected_dir_path = args['dir'][1]
 
-    def test_convert_Arithmetic_mean(self):
-        with open("test/Arithmetic_mean.txt", "r") as t:
-            with open("test/Arithmetic_mean.html", "r") as h:
-                result_Arithmetic_mean = convert(t.read().replace("\n", ""), self.tex_path)[0]
-                self.assertEqual(result_Arithmetic_mean, h.read().replace("\n", ""))
+    actual_dir = os.fsencode(actual_dir_path)
+    expected_dir = os.fsencode(expected_dir_path)
 
-    def tearDown(self) -> None:
-        if os.path.exists(self.tex_path):
-            os.remove(self.tex_path)
-        if os.path.exists("combined.html"):
-            os.remove("combined.html")
-        if os.path.exists("actual.tex"):
-            os.remove("actual.tex")
+    expected = []
+    num_pass = 0
+    num_test = 0
+    for expected_file in os.listdir(expected_dir):
+        expected_filename = os.fsdecode(expected_file)
+        if expected_filename.endswith('.html'):
+            expected.append(expected_filename)
+    for actual_file in os.listdir(actual_dir):
+        actual_filename = os.fsdecode(actual_file)
+        if actual_filename in expected:
+            num_test += 1
+            num_pass += compare(os.path.join(actual_dir_path, actual_filename), os.path.join(expected_dir_path, actual_filename), args['verbose'])
 
+    print("Ran " + str(num_test) + " tests. ")
+    print("Passed " + str(num_pass) + " tests. ")
 
-if __name__ == '__main__':
-    unittest.main()
+def compare(actual_path, expected_path, verbose):
+    with open(actual_path, 'r') as a:
+        with open(expected_path, 'r') as e:
+            actual = a.read().split('\n')
+            expected = e.read().split('\n')
+
+            actual[:] = (value for value in actual if value != '')
+            expected[:] = (value for value in expected if value != '')
+
+            if verbose:
+                for diff in difflib.context_diff(actual, expected):
+                    print(diff)
+
+            return actual == expected
+
+if __name__ == "__main__":
+    convert_test()
+
