@@ -7,9 +7,15 @@ import timeit
 import html
 
 
-def decompress_math(dump, index, result_path, flag=False):
+def decompress_math(dump, index, result_path, verbose):
     # dump = 'dumps/enwiki-latest-pages-articles-multistream1.xml-p1p41242.bz2'
     # index = 'dumps/enwiki-latest-pages-articles-multistream-index1.txt-p1p41242.bz2'
+
+    if verbose not in [1, 2, 3]:
+        raise ValueError('Invalid value for -v/--verbose')
+
+    num_expr = 0
+
 
     with open(index, 'rb') as f:
         f.seek(0)
@@ -67,13 +73,16 @@ def decompress_math(dump, index, result_path, flag=False):
                     page_title = re.sub(r'[^A-Za-z0-9 ]+', '', page_titles[page_index])
                     page_title = page_title.replace(' ', '_')
 
-                    convert(target, tex_path)
+                    num_expr += convert(target, tex_path)
 
                     with open(result_path + '/' + page_title + '.html', 'w') as f:
                         f.write(target)
 
                     # end1 = timeit.default_timer()
                     # print(time_count / (1.0*(end1 - start1)))
+    if verbose == 1:
+        print("Number of math expressions: ", num_expr)
+
     if os.path.exists(tex_path):
         os.remove(tex_path)
     if os.path.exists("combined.html"):
@@ -87,6 +96,7 @@ def convert(target, tex_path):
     l2 = (n.start() for n in re.finditer('</math>', target))
 
     total_occur = 0
+    num_expr = 0
     for a, b in zip(l1, l2):
         a += total_occur
         b += total_occur
@@ -112,6 +122,8 @@ def convert(target, tex_path):
         os.system(
             "latexml actual.tex 2>/dev/null | latexmlpost - --format=html5 --destination=combined.html --presentationmathml --contentmathml 2>/dev/null")
 
+        num_expr += 1
+
         with open("combined.html", "r") as h:
             h_content = h.read().replace('\n', '')
             m = re.search('<math(.+?)</math>', h_content)
@@ -129,4 +141,4 @@ def convert(target, tex_path):
             total_occur += len(mathml) - latex_str_len - 29
             target = target[:a] + mathml + target[b + 7:]
 
-    return target
+    return target, num_expr
