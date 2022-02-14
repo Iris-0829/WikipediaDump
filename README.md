@@ -4,4 +4,19 @@ The goal of the project is to crawl all Wikipedia pages from the Wikipedia dump 
 
 Before running the code, you will need to install LaTeXML (see https://dlmf.nist.gov/LaTeXML/), BeautifulSoup4 and Python version newer than Python 3.6. (I am using python3.8)
 
-To run the code, type in ```python3.8 main.py```. Each time you run the code, it will automatically check if there are update of the wikipedia dump, and convert all the files if there are newer version. 
+
+## Running test
+
+The usage of the test function is `test.py [-h] [-v] dir dir`
+
+Two `dir` are the argument for the path of directory with generated files and the path of directory with expected files. 
+
+`-v` and `--verbose` is to show more informative output, which displays the difference between files line by line. 
+
+For example, run 
+
+
+```python3.8 test.py result/ test/ -v```
+
+
+to compare the result in `result/` and `test/` with detailed output. 
