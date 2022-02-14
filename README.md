@@ -20,3 +20,16 @@ For example, run
 
 
 to compare the result in `result/` and `test/` with detailed output. 
+
+## Conversion from WikiText to HTML
+
+The usage of the conversion function is `convert_html.py path`
+
+`path` argument is the path of input WikiText. 
+
+For example, run 
+
+```python3.8 convert_html.py example.txt```
+
+
+will print corresponding HTML on stdout. You can also call `convert_to_html` directly. 
