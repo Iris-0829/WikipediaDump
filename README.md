@@ -49,9 +49,16 @@ The usage of the conversion function is `convert_html.py path`
 
 `path` argument is the path of input WikiText. 
 
-For example, run 
+For example,  
 
-```python3.8 convert_html.py example.txt```
+```python3.8 convert_html.py test/Albedo.html```
 
 
-will print corresponding HTML on stdout. You can also call `convert_to_html` directly. 
+will print corresponding HTML on stdout. 
+
+```python3.8 convert_html.py test/Albedo.html > test4.html```
+
+will save the output as html file. 
+
+
+You can also call `convert_to_html` directly. 
