@@ -56,9 +56,9 @@ For example,
 
 will print corresponding HTML on stdout. 
 
-```python3.8 convert_html.py test/Albedo.html > test4.html```
+```python3.8 convert_html.py test/Albedo.html > test.html```
 
-will save the output as html file. 
+will save the output as an html file. 
 
 
 You can also call `convert_to_html` directly. 
